@@ -27,11 +27,32 @@ This walkthrough comes built with a simple [nodejs hello world app.](hello-node/
 
 1. `git clone` this repository
 
-1. `cd hello-node` into the folder and `docker build -t gcr.io/google.com/{PROJECT-ID}/hello-node:1 .` 
+1. `cd ./hello-node` into the directory and `docker build -t gcr.io/google.com/{PROJECT-ID}/hello-node:1 .` 
+
 Note: If your project-id contains a ":" (eg: `example.com:project-foo`) replace `:` with `/` 
 
+Note: Getting an error around accessing the docker agent? Did you just `sudo` to fix it? Add your user to the docker group with `sudo usermod -aG docker $USER`. You'll need this for later, so better to do it now.
 
-## Step 1: Create Cluster and Deploy Hello World
+Great! You have built a docker image, next we'll tag it so it has the appropriate meta-data for Google Cloud Container builder to consume
+
+### Tag the image
+
+1. docker tag hello-node gcr.io/{PROJECT-ID}/hello-node:v1
+
+Note: If your project-id contains a ":" (eg: `example.com:project-foo`) replace `:` with `/` 
+
+Awesome. Your image has the metadata it needs to be understood by machines _and_ humanity. Conciousness is a wonderful thing. 
+
+
+## Push that image to Google Cloud Container builder
+
+1. gcloud docker -- push gcr.io/{PROJECT-ID}/hello-node:v1
+
+Note: If your project-id contains a ":" (eg: `example.com:project-foo`) replace `:` with `/` 
+
+Things are looking good now! Your container containing the sample nodejs app is now up and available in your google cloud project:
+
+## Create Cluster 
 
 1. Create a cluster, assuming you want it in us-central1-a:
 
@@ -39,25 +60,58 @@ Note: If your project-id contains a ":" (eg: `example.com:project-foo`) replace 
 
 If you get an error, make sure you enable the Kubernetes Engine API [here](https://console.cloud.google.com/apis/api/container.googleapis.com/overview).
 
-1. Run the hello world [deployment](./hello-node/deployment.yaml):
+Excellent. You've created your cluster, but nothing is running inside it. Let's fix that.
 
-`kubectl apply -f ./hello-node/deployment.yaml`
+## Run your container in the cluster
 
-Expose the container with a [service](./hello-node/service.yaml):
+1. `kubectl run hello-node --image=gcr.io/{PROJECT-ID}/hello-node:v1 -port=8080`
 
-`kubectl apply -f ./hello-node/service.yaml`
+We've just created a deployment object! You should see something like `deployment "hello-node" created`
 
-At this stage, you have created a Deployment with one Pod, and a Service with an extrnal load balancer that will send traffic to that pod.
+Check out what the deployment looks like with `kubectl get deployments`
 
-You can see the extrnal IP address for the service with this command. It might take a few minutes to get the extrnal IP address:
+1. View your pod with `kubectl get pods` a favorable result might look something like:
 
-`kubectl get svc`
+```
+NAME                         READY     STATUS    RESTARTS   AGE
+hello-node-7b897746b5-thcm2   1/1       Running   0          6m
+```
 
-## Step 2: Scale up deployment
+Learn more things! Try `kubectl cluster-info` and `kubectl config view` something broken? `kubectl get events` and `kubectl logs {pod_name}`
+
+## Expose your deployment to the internet and feel that "hello world" glory
+
+1. Expose ther service and obtain an externally accessible IP with: 
+
+`kubectl expose deployment hello-node --type="LoadBalancer"`
+
+The respond should be something like `service "hello-node" exposed`
+
+1. Get the publicy-accessible IP of the service and curl!
+
+`kubectl getr services`
+
+It may take a few moments for the public IP to be provided. Run `watch -n 10 kubectl get services` to monitor changes every 10 seconds
+
+Eventually you'll see something like
+
+```
+NAME         TYPE           CLUSTER-IP    EXTERNAL-IP      PORT(S)          AGE
+hello-node   LoadBalancer   10.39.245.0   35.223.161.100   8080:32630/TCP   31m
+kubernetes   ClusterIP      10.39.240.1   <none>           443/TCP          6h
+```
+
+Well look at that! You've got an external ip _and_ a cluster ip. If you were inside the cluster. Right now, the external ip is all we care about, but let your imagine think about what could be done with the cluster ip!
+
+1. `curl {EXTERNAL-IP}:8080` should respond with a glorious "Hi there"
+
+Feels good, right? 
+
+## Scale up deployment
 
 One pod is not enough. Let's get 5 of them!
 
-`kubectl scale deployment hello-node-green --replicas=5`
+1. `kubectl scale deployment hello-node-green --replicas=5`
 
 You can see the all pods with this command:
 

@@ -101,7 +101,7 @@ hello-node   LoadBalancer   10.39.245.0   35.223.161.100   8080:32630/TCP   31m
 kubernetes   ClusterIP      10.39.240.1   <none>           443/TCP          6h
 ```
 
-Well look at that! You've got an external ip _and_ a cluster ip. If you were inside the cluster. Right now, the external ip is all we care about, but let your imagine think about what could be done with the cluster ip!
+Well look at that! You've got an external ip _and_ a cluster ip.  Tip is all we care about, but let your imagine think about what could be done with the cluster ip!
 
 1. `curl {EXTERNAL-IP}:8080` should respond with a glorious "Hi there"
 
@@ -111,7 +111,7 @@ Feels good, right?
 
 One pod is not enough. Let's get 5 of them!
 
-1. `kubectl scale deployment hello-node-green --replicas=5`
+1. `kubectl scale deployment hello-node --replicas=5`
 
 You can see the all pods with this command:
 

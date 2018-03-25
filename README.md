@@ -19,22 +19,27 @@ To complete this tutorial, you will need the following tools installed:
 
 You can also use [Google Cloud Shell](https://cloud.google.com/shell), a free VM that has all these tools pre-installed.
 
-**For this workshop, I will assume you are using Cloud Shell.**
+## Preparation: Create the container image
+
+This walkthrough comes built with a simple [nodejs hello world app.](hello-node/server.js) It runs on port 8080 and responds to a `curl` with "hi there"
+
+### Build the image
+
+1. `git clone` this repository
+
+1. `cd hello-node` into the folder and `docker build -t gcr.io/google.com/{PROJECT-ID}/hello-node:1 .` 
+Note: If your project-id contains a ":" (eg: `example.com:project-foo`) replace `:` with `/` 
+
 
 ## Step 1: Create Cluster and Deploy Hello World
 
-1. Create a cluster:
+1. Create a cluster, assuming you want it in us-central1-a:
 
-```
-ZONE=$(curl "http://metadata.google.internal/computeMetadata/v1/instance/zone" \ 
-      -H "Metadata-Flavor: Google" | sed 's:.*/::')
-```
-
-`gcloud container clusters create my-cluster --zone=$ZONE`
+`gcloud container clusters create hello-node --num-nodes 2 --machine-type n1-standard-1 --zone us-central1-a`
 
 If you get an error, make sure you enable the Kubernetes Engine API [here](https://console.cloud.google.com/apis/api/container.googleapis.com/overview).
 
-2. Run the hello world [deployment](./hello-node/deployment.yaml):
+1. Run the hello world [deployment](./hello-node/deployment.yaml):
 
 `kubectl apply -f ./hello-node/deployment.yaml`
 
